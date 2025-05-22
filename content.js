@@ -141,7 +141,6 @@ const tryShift = (e) => {
   return true;
 };
 
-
 /**
  * handle "gg":
  *
@@ -175,6 +174,123 @@ const tryGgScroll = (e) => {
 };
 
 /**
+ * get links in document:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  array of <a>
+ */
+const getLinks = () => {
+  return [...document.querySelectorAll("a")].filter(a => {
+    const r = a.getBoundingClientRect();
+
+    if (r.width <= 0)
+      return false;
+    if (r.height <= 0)
+      return false;
+
+    return true;
+  });
+};
+
+/**
+ * get random number between zero and n:
+ *
+ * args:
+ *  @n: max number
+ *
+ * ret:
+ *  random number between 0 and n
+ */
+const rand = (n) => {
+  return Math.floor(Math.random() * n);
+};
+
+/**
+ * generate unique key for link:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  key
+ */
+const links = new Map(); // links
+const genKey = () => {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+
+  let key = "";
+  do {
+    key += chars[rand(chars.length)];
+  } while (links.has(key));
+
+  return key;
+};
+
+/**
+ * enter link mode:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  nothing
+ */
+let linkChoice = "";    // link chosen
+let linkMode   = false; // are we in link mode?
+const enterLinkMode = () => {
+  linkMode = true;
+  choice = "";
+
+  getLinks().forEach((link) => {
+    const key = genKey();
+    const r = link.getBoundingClientRect();
+    const label = document.createElement("div");
+
+    label.textContent = key;
+    Object.assign(label.style, {
+      background: "yellow",
+      fontWeight: "bold",
+      position:   "absolute",
+      fontSize:   "12px",
+      padding:    "2px 4px",
+      zIndex:     9999,
+      border:     "1px solid black",
+      color:      "black",
+      left:       `${r.left + window.scrollX}px`,
+      top:        `${r.top + window.scrollY}px`,
+    });
+    document.body.appendChild(label);
+
+    links.set(key, {
+      label,
+      link,
+    });
+  });
+};
+
+/**
+ * exit link mode:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  nothing
+ */
+const exitLinkMode = () => {
+  linkMode = false;
+  linkChoice = "";
+
+  for (const [k, v] of links)
+    v.label.remove();
+
+  links.clear();
+};
+
+/**
  * handle keydown event:
  *
  * args:
@@ -186,6 +302,25 @@ const tryGgScroll = (e) => {
 document.addEventListener("keydown", (e) => {
   if (eventIgnore(e))
     return;
+
+  if (linkMode) {
+    if (e.key == "Escape") {
+      exitLinkMode();
+      return;
+    }
+    linkChoice += e.key;
+    console.log(linkChoice);
+    if (links.has(linkChoice)) {
+      links.get(linkChoice).link.click();
+      exitLinkMode();
+    }
+    return;
+  }
+
+  if (e.key == "f") {
+    enterLinkMode();
+    return;
+  }
 
   if (trySingle(e))
     return;
