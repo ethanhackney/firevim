@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "firevim",
+  "version": "0.1",
+  "description": "vim for firefox",
+  "permissions": ["tabs", "activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "firevim"
+  }
+}
