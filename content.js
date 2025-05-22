@@ -6,6 +6,7 @@ const K_SCROLL =  -50; // how much to scroll for "k"
 const U_SCROLL = -200; // how much to scroll for "ctrl+u"
 const D_SCROLL =  200; // how much to scroll for "ctrl-d"
 const GG_WAIT  =  400; // how long to wait for next "g"
+const CAPTURE  = true; // capture keydown early
 
 // single char map
 const single = new Map([
@@ -16,6 +17,7 @@ const single = new Map([
 const ctrl = new Map([
   ["u", U_SCROLL],
   ["d", D_SCROLL],
+  ["o", 0],
 ]);
 // shift map
 const shift = new Map([
@@ -106,7 +108,14 @@ const tryCtrlScroll = (e) => {
   if (!ctrl.has(key))
     return false;
 
-  scroll(e, ctrl.get(key));
+  if (key == "o") {
+    window.history.back();
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    scroll(e, ctrl.get(key));
+  }
+
   return true;
 };
 
@@ -186,4 +195,4 @@ document.addEventListener("keydown", (e) => {
     return;
 
   tryGgScroll(e);
-});
+}, CAPTURE);
