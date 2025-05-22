@@ -71,16 +71,16 @@ const scroll = (e, amt) => {
 };
 
 /**
- * try to scroll for a single char key:
+ * handle single char keys:
  *
  * args:
  *  @e: event
  *
  * ret:
- *  @true:  if could
- *  @false: if could not
+ *  @true:  if handled
+ *  @false: if not
  */
-const trySingleScroll = (e) => {
+const trySingle = (e) => {
   const key = e.key.toLowerCase();
 
   if (!single.has(key))
@@ -91,16 +91,16 @@ const trySingleScroll = (e) => {
 };
 
 /**
- * try to scroll for a ctrl key:
+ * handle ctrl keys:
  *
  * args:
  *  @e: event
  *
  * ret:
- *  @true:  if could
- *  @false: if could not
+ *  @true:  if handled
+ *  @false: if not
  */
-const tryCtrlScroll = (e) => {
+const tryCtrl = (e) => {
   const key = e.key.toLowerCase();
 
   if (!e.ctrlKey)
@@ -120,16 +120,16 @@ const tryCtrlScroll = (e) => {
 };
 
 /**
- * try to scroll for a shift key:
+ * handle shift keys:
  *
  * args:
  *  @e: event
  *
  * ret:
- *  @true:  if could
- *  @false: if could not
+ *  @true:  if handled
+ *  @false: if not
  */
-const tryShiftScroll = (e) => {
+const tryShift = (e) => {
   const key = e.key.toLowerCase();
 
   if (!e.shiftKey)
@@ -143,7 +143,7 @@ const tryShiftScroll = (e) => {
 
 
 /**
- * try to scroll for "gg":
+ * handle "gg":
  *
  * args:
  *  @e: event
@@ -187,11 +187,11 @@ document.addEventListener("keydown", (e) => {
   if (eventIgnore(e))
     return;
 
-  if (trySingleScroll(e))
+  if (trySingle(e))
     return;
-  if (tryCtrlScroll(e))
+  if (tryCtrl(e))
     return;
-  if (tryShiftScroll(e))
+  if (tryShift(e))
     return;
 
   tryGgScroll(e);
