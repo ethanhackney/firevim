@@ -291,6 +291,29 @@ const exitLinkMode = () => {
 };
 
 /**
+ * link mode handler:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  may change page
+ */
+const linkModeHandler = (e) => {
+  if (e.key == "Escape") {
+    exitLinkMode();
+    return;
+  }
+
+  linkChoice += e.key;
+  if (!links.has(linkChoice))
+    return;
+
+  links.get(linkChoice).link.click();
+  exitLinkMode();
+};
+
+/**
  * handle keydown event:
  *
  * args:
@@ -304,19 +327,9 @@ document.addEventListener("keydown", (e) => {
     return;
 
   if (linkMode) {
-    if (e.key == "Escape") {
-      exitLinkMode();
-      return;
-    }
-    linkChoice += e.key;
-    console.log(linkChoice);
-    if (links.has(linkChoice)) {
-      links.get(linkChoice).link.click();
-      exitLinkMode();
-    }
+    linkModeHandler(e);
     return;
   }
-
   if (e.key == "f") {
     enterLinkMode();
     return;
