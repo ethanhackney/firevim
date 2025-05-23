@@ -7,6 +7,7 @@ const U_SCROLL = -200; // how much to scroll for "ctrl+u"
 const D_SCROLL =  200; // how much to scroll for "ctrl-d"
 const GG_WAIT  =  400; // how long to wait for next "g"
 const CAPTURE  = true; // capture keydown early
+const KEY_WAIT =  400; // time to wait for next key
 
 // single char map
 const single = new Map([
@@ -221,8 +222,17 @@ const rand = (n) => {
  *  handle multi-char keys
  */
 const links = new Map(); // links
-let keyNext = 0;         // next free key
+// let keyNext = 0;         // next free key
 const genKey = () => {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+
+  let key = "";
+  do {
+    key += chars[rand(chars.length)];
+  } while (links.has(key));
+
+  return key;
+  /*
   const keys = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=[]{}:;<,>./?|";
 
   if (keyNext === keys.length) {
@@ -232,6 +242,7 @@ const genKey = () => {
 
   keyNext++;
   return keys[keyNext - 1];
+  */
 };
 
 /**
@@ -312,21 +323,22 @@ const exitLinkMode = () => {
  * ret:
  *  may change page
  */
+let cTimeout = null; // character timeout
 const linkModeHandler = (e) => {
   if (e.key === "Escape") {
     exitLinkMode();
     return;
   }
 
-  if (e.key.length !== 1)
-    return;
-
+  clearTimeout(cTimeout);
   linkChoice += e.key;
-  if (!links.has(linkChoice))
-    return;
+  cTimeout = setTimeout(() => {
+    if (!links.has(linkChoice))
+      return;
 
-  links.get(linkChoice).link.click();
-  exitLinkMode();
+    links.get(linkChoice).link.click();
+    exitLinkMode();
+  }, KEY_WAIT);
 };
 
 /**
