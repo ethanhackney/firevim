@@ -7,7 +7,7 @@ const U_SCROLL = -200; // how much to scroll for "ctrl+u"
 const D_SCROLL =  200; // how much to scroll for "ctrl-d"
 const GG_WAIT  =  400; // how long to wait for next "g"
 const CAPTURE  = true; // capture keydown early
-const KEY_WAIT =  400; // time to wait for next key
+const KEY_WAIT =  200; // time to wait for next key
 
 // single char map
 const single = new Map([
@@ -217,12 +217,8 @@ const rand = (n) => {
  *
  * ret:
  *  key
- *
- * TODO:
- *  handle multi-char keys
  */
 const links = new Map(); // links
-// let keyNext = 0;         // next free key
 const genKey = () => {
   const chars = "abcdefghijklmnopqrstuvwxyz";
 
@@ -232,17 +228,6 @@ const genKey = () => {
   } while (links.has(key));
 
   return key;
-  /*
-  const keys = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=[]{}:;<,>./?|";
-
-  if (keyNext === keys.length) {
-    alert("firevim: too many links");
-    return "";
-  }
-
-  keyNext++;
-  return keys[keyNext - 1];
-  */
 };
 
 /**
@@ -257,21 +242,14 @@ const genKey = () => {
 let linkChoice = "";    // link chosen
 let linkMode   = false; // are we in link mode?
 const enterLinkMode = () => {
-  const elem = getLinks();
-
   linkMode = true;
   choice = "";
-  for (let i = 0; i < elem.length; i++) {
-    const link = elem[i];
 
+  getLinks().forEach((link) => {
     const key = genKey();
-    if (!key) {
-      exitLinkMode();
-      return;
-    }
-
     const r = link.getBoundingClientRect();
     const label = document.createElement("div");
+
     label.textContent = key;
     Object.assign(label.style, {
       background: "yellow",
@@ -291,7 +269,7 @@ const enterLinkMode = () => {
       label,
       link,
     });
-  }
+  })
 };
 
 /**
