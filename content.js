@@ -218,15 +218,17 @@ const rand = (n) => {
  *  key
  */
 const links = new Map(); // links
+let keyNext = 0;         // next free key
 const genKey = () => {
-  const chars = "abcdefghijklmnopqrstuvwxyz";
+  const keys = "abcdefghijklmnopqrstuvwxyz";
 
-  let key = "";
-  do {
-    key += chars[rand(chars.length)];
-  } while (links.has(key));
+  if (keyNext == keys.length) {
+    console.error("too many links");
+    return "";
+  }
 
-  return key;
+  keyNext++;
+  return keys[keyNext - 1];
 };
 
 /**
@@ -241,14 +243,21 @@ const genKey = () => {
 let linkChoice = "";    // link chosen
 let linkMode   = false; // are we in link mode?
 const enterLinkMode = () => {
+  const elem = getLinks();
+
   linkMode = true;
   choice = "";
+  for (let i = 0; i < elem.length; i++) {
+    const link = elem[i];
 
-  getLinks().forEach((link) => {
     const key = genKey();
+    if (!key) {
+      exitLinkMode();
+      return;
+    }
+
     const r = link.getBoundingClientRect();
     const label = document.createElement("div");
-
     label.textContent = key;
     Object.assign(label.style, {
       background: "yellow",
@@ -268,7 +277,7 @@ const enterLinkMode = () => {
       label,
       link,
     });
-  });
+  }
 };
 
 /**
@@ -283,6 +292,7 @@ const enterLinkMode = () => {
 const exitLinkMode = () => {
   linkMode = false;
   linkChoice = "";
+  keyNext = 0;
 
   for (const [k, v] of links)
     v.label.remove();
