@@ -108,7 +108,7 @@ const tryCtrl = (e) => {
   if (!ctrl.has(key))
     return false;
 
-  if (key == "o") {
+  if (key === "o") {
     window.history.back();
     e.preventDefault();
     e.stopPropagation();
@@ -155,7 +155,7 @@ let gTimeout = null;  // timeout
 const tryGgScroll = (e) => {
   const key = e.key.toLowerCase();
 
-  if (key != "g")
+  if (key !== "g")
     return;
 
   if (gPressed) {
@@ -216,14 +216,17 @@ const rand = (n) => {
  *
  * ret:
  *  key
+ *
+ * TODO:
+ *  handle multi-char keys
  */
 const links = new Map(); // links
 let keyNext = 0;         // next free key
 const genKey = () => {
-  const keys = "abcdefghijklmnopqrstuvwxyz";
+  const keys = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=[]{}:;<,>./?|";
 
-  if (keyNext == keys.length) {
-    console.error("too many links");
+  if (keyNext === keys.length) {
+    alert("firevim: too many links");
     return "";
   }
 
@@ -310,10 +313,13 @@ const exitLinkMode = () => {
  *  may change page
  */
 const linkModeHandler = (e) => {
-  if (e.key == "Escape") {
+  if (e.key === "Escape") {
     exitLinkMode();
     return;
   }
+
+  if (e.key.length !== 1)
+    return;
 
   linkChoice += e.key;
   if (!links.has(linkChoice))
@@ -340,7 +346,7 @@ document.addEventListener("keydown", (e) => {
     linkModeHandler(e);
     return;
   }
-  if (e.key == "f") {
+  if (e.key === "f") {
     enterLinkMode();
     return;
   }
