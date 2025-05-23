@@ -310,6 +310,8 @@ const linkModeHandler = (e) => {
 
   clearTimeout(cTimeout);
   linkChoice += e.key;
+  e.preventDefault();
+  e.stopPropagation();
   cTimeout = setTimeout(() => {
     if (!links.has(linkChoice))
       return;
