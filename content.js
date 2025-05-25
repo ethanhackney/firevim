@@ -7,7 +7,7 @@ const U_SCROLL = -200; // how much to scroll for "ctrl+u"
 const D_SCROLL =  200; // how much to scroll for "ctrl-d"
 const GG_WAIT  =  400; // how long to wait for next "g"
 const CAPTURE  = true; // capture keydown early
-const KEY_WAIT =  200; // time to wait for next key
+const KEY_WAIT =  300; // time to wait for next key
 
 // single char map
 const single = new Map([
