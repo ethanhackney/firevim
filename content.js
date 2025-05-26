@@ -339,6 +339,8 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.key === "f") {
+    if (e.ctrlKey)
+      return;
     e.preventDefault();
     e.stopPropagation();
     enterLinkMode();
