@@ -3,8 +3,8 @@
  */
 const J_SCROLL =   50; // how much to scroll for "j"
 const K_SCROLL =  -50; // how much to scroll for "k"
-const U_SCROLL = -200; // how much to scroll for "ctrl+u"
-const D_SCROLL =  200; // how much to scroll for "ctrl-d"
+const U_SCROLL = -500; // how much to scroll for "ctrl+u"
+const D_SCROLL =  500; // how much to scroll for "ctrl-d"
 const GG_WAIT  =  400; // how long to wait for next "g"
 const CAPTURE  = true; // capture keydown early
 const KEY_WAIT =  300; // time to wait for next key
