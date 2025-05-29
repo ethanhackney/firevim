@@ -1,13 +1,16 @@
 /**
  * firevim extension brings vim keybindings to firefox
  */
-const J_SCROLL =   50; // how much to scroll for "j"
-const K_SCROLL =  -50; // how much to scroll for "k"
-const U_SCROLL = -500; // how much to scroll for "ctrl+u"
-const D_SCROLL =  500; // how much to scroll for "ctrl-d"
-const GG_WAIT  =  400; // how long to wait for next "g"
-const CAPTURE  = true; // capture keydown early
-const KEY_WAIT =  300; // time to wait for next key
+const J_SCROLL  =   50; // how much to scroll for "j"
+const K_SCROLL  =  -50; // how much to scroll for "k"
+const U_SCROLL  = -500; // how much to scroll for "ctrl+u"
+const D_SCROLL  =  500; // how much to scroll for "ctrl-d"
+const GG_WAIT   =  400; // how long to wait for next "g"
+const CAPTURE   = true; // capture keydown early
+const KEY_WAIT  =  300; // time to wait for next key
+const NORMAL    =    0; // normal mode
+const IN_NORMAL =    1; // input normal mode
+const IN_INSERT =    2; // input insert mode
 
 // single char map
 const single = new Map([
@@ -27,35 +30,11 @@ const shift = new Map([
     top: document.documentElement.scrollHeight,
   }],
 ]);
-// tagNames to ignore
-const tagIgnore = new Set([
-  "INPUT",
-  "TEXTAREA",
+// sites that i am having trouble with, NOTE: this is a hack
+const blackList = new Set([
+  "www.chatgpt.com",
 ]);
-
-/**
- * should we ignore event?:
- *
- * args:
- *  @e: event
- *
- * ret:
- *  @true:  if should
- *  @false: if should not
- */
-const eventIgnore = (e) => {
-  const {
-    tagName,
-    isContentEditable,
-  } = e.target;
-
-  if (tagIgnore.has(tagName))
-    return true;
-  if (isContentEditable)
-    return true;
-
-  return false;
-};
+let mode = NORMAL;
 
 /**
  * scroll on page:
@@ -321,6 +300,24 @@ const linkModeHandler = (e) => {
   }, KEY_WAIT);
 };
 
+document.querySelectorAll("textarea").forEach((input) => {
+  input.addEventListener("focus", (e) => {
+    mode = IN_NORMAL;
+  });
+  input.addEventListener("blur", (e) => {
+    mode = NORMAL;
+  });
+});
+
+document.querySelectorAll("input").forEach((input) => {
+  input.addEventListener("focus", (e) => {
+    mode = IN_NORMAL;
+  });
+  input.addEventListener("blur", (e) => {
+    mode = NORMAL;
+  });
+});
+
 /**
  * handle keydown event:
  *
@@ -330,9 +327,57 @@ const linkModeHandler = (e) => {
  * ret:
  *  nothing
  */
+let dPressed = false;
+let dTimeout = null;
 document.addEventListener("keydown", (e) => {
-  if (eventIgnore(e))
+  // hack
+  if (blackList.has(window.location.hostname))
     return;
+
+  if (mode !== NORMAL) {
+    if (e.key === "Enter") {
+      mode = NORMAL;
+      return;
+    }
+    if (mode === IN_NORMAL) {
+      if (e.key === "i") {
+        mode = IN_INSERT;
+      } else if (e.key === "h") {
+        const i = e.target.selectionStart;
+
+        e.target.setSelectionRange(
+          Math.max(0, i - 1),
+          Math.max(0, i - 1)
+        );
+      } else if (e.key === "l") {
+        const i = e.target.selectionStart;
+        const len = e.target.value.length;
+
+        e.target.setSelectionRange(
+          Math.min(len, i + 1),
+          Math.min(len, i + 1)
+        );
+      } else if (dPressed) {
+        e.target.value = "";
+        dPressed = false;
+        clearTimeout(dTimeout);
+      } else if (e.key === "d") {
+        dPressed = true;
+        dTimeout = setTimeout(() => {
+          dPressed = false;
+        }, GG_WAIT);
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      if (e.key === "Escape") {
+        mode = IN_NORMAL;
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    return;
+  }
 
   if (linkMode) {
     linkModeHandler(e);
