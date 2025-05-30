@@ -18,16 +18,20 @@ let mode = MODE_NORMAL;
  *  array of <a>
  */
 const getLinks = () => {
-  return [...document.querySelectorAll("a")].filter((a) => {
+  const links = [];
+
+  for (const a of document.getElementsByTagName("a")) {
     const r = a.getBoundingClientRect();
 
     if (r.width <= 0)
-      return false;
+      continue;
     if (r.height <= 0)
-      return false;
+      continue;
 
-    return true;
-  });
+    links.push(a);
+  }
+
+  return links;
 };
 
 /**
@@ -372,14 +376,14 @@ const shiftHandler = (e) => {
 };
 
 // handle focus/blur for all <input>
-document.querySelectorAll("input").forEach((input) => {
+for (const input of document.getElementsByTagName("input")) {
   input.addEventListener("focus", (e) => {
     mode = MODE_INPUT_NORMAL;
   });
   input.addEventListener("blur", (e) => {
     mode = MODE_NORMAL;
   });
-});
+}
 
 // handle keydown event
 document.addEventListener("keydown", (e) => {
