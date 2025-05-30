@@ -1,169 +1,24 @@
 /**
- * firevim extension brings vim keybindings to firefox
+ * firevim extension brings vim keybindings for firefox
  */
-const J_SCROLL  =   50; // how much to scroll for "j"
-const K_SCROLL  =  -50; // how much to scroll for "k"
-const U_SCROLL  = -500; // how much to scroll for "ctrl+u"
-const D_SCROLL  =  500; // how much to scroll for "ctrl-d"
-const GG_WAIT   =  400; // how long to wait for next "g"
-const CAPTURE   = true; // capture keydown early
-const KEY_WAIT  =  300; // time to wait for next key
-const NORMAL    =    0; // normal mode
-const IN_NORMAL =    1; // input normal mode
-const IN_INSERT =    2; // input insert mode
+const MODE_INPUT_NORMAL = 0; // normal mode inside <input>
+const MODE_INSERT       = 1; // insert mode
+const MODE_NORMAL       = 2; // normal mode
 
-// single char map
-const single = new Map([
-  ["j", J_SCROLL],
-  ["k", K_SCROLL],
-]);
-// ctrl map
-const ctrl = new Map([
-  ["u", U_SCROLL],
-  ["d", D_SCROLL],
-  ["o", 0],
-]);
-// shift map
-const shift = new Map([
-  ["g", {
-    behavior: "smooth",
-    top: document.documentElement.scrollHeight,
-  }],
-]);
-// sites that i am having trouble with, NOTE: this is a hack
-const blackList = new Set([
-  "www.chatgpt.com",
-]);
-let mode = NORMAL;
+// current mode
+let mode = MODE_NORMAL;
 
 /**
- * scroll on page:
+ * get all <a> on page:
  *
  * args:
- *  @amt: amount to scroll
- *
- * ret:
  *  nothing
- */
-const scroll = (e, amt) => {
-  window.scrollBy(0, amt);
-  e.preventDefault();
-};
-
-/**
- * handle single char keys:
- *
- * args:
- *  @e: event
- *
- * ret:
- *  @true:  if handled
- *  @false: if not
- */
-const trySingle = (e) => {
-  const key = e.key.toLowerCase();
-
-  if (!single.has(key))
-    return false;
-
-  scroll(e, single.get(key));
-  return true;
-};
-
-/**
- * handle ctrl keys:
- *
- * args:
- *  @e: event
- *
- * ret:
- *  @true:  if handled
- *  @false: if not
- */
-const tryCtrl = (e) => {
-  const key = e.key.toLowerCase();
-
-  if (!e.ctrlKey)
-    return false;
-  if (!ctrl.has(key))
-    return false;
-
-  if (key === "o") {
-    window.history.back();
-    e.preventDefault();
-    e.stopPropagation();
-  } else {
-    scroll(e, ctrl.get(key));
-  }
-
-  return true;
-};
-
-/**
- * handle shift keys:
- *
- * args:
- *  @e: event
- *
- * ret:
- *  @true:  if handled
- *  @false: if not
- */
-const tryShift = (e) => {
-  const key = e.key.toLowerCase();
-
-  if (!e.shiftKey)
-    return false;
-  if (!shift.has(key))
-    return false;
-
-  window.scrollTo(shift.get(key));
-  return true;
-};
-
-/**
- * handle "gg":
- *
- * args:
- *  @e: event
- *
- * ret:
- *  nothing
- */
-let gPressed = false; // have we pressed "g"?
-let gTimeout = null;  // timeout
-const tryGgScroll = (e) => {
-  const key = e.key.toLowerCase();
-
-  if (key !== "g")
-    return;
-
-  if (gPressed) {
-    window.scrollTo({
-      behavior: "smooth",
-      top: 0,
-    });
-    gPressed = false;
-    clearTimeout(gTimeout);
-  } else {
-    gPressed = true;
-    gTimeout = setTimeout(() => {
-      gPressed = false;
-    }, GG_WAIT);
-  }
-};
-
-/**
- * get links in document:
- *
- * args:
- *  none
  *
  * ret:
  *  array of <a>
  */
 const getLinks = () => {
-  return [...document.querySelectorAll("a")].filter(a => {
+  return [...document.querySelectorAll("a")].filter((a) => {
     const r = a.getBoundingClientRect();
 
     if (r.width <= 0)
@@ -176,34 +31,24 @@ const getLinks = () => {
 };
 
 /**
- * get random number between zero and n:
- *
- * args:
- *  @n: max number
- *
- * ret:
- *  random number between 0 and n
- */
-const rand = (n) => {
-  return Math.floor(Math.random() * n);
-};
-
-/**
  * generate unique key for link:
  *
  * args:
- *  none
+ *  nothing
  *
  * ret:
- *  key
+ *  unique key
+ *
+ * TODO:
+ *  better algorithm
  */
-const links = new Map(); // links
-const genKey = () => {
+const links = new Map();
+const uniqKey = () => {
   const chars = "abcdefghijklmnopqrstuvwxyz";
 
   let key = "";
   do {
-    key += chars[rand(chars.length)];
+    key += chars[Math.floor(Math.random() * chars.length)];
   } while (links.has(key));
 
   return key;
@@ -213,19 +58,19 @@ const genKey = () => {
  * enter link mode:
  *
  * args:
- *  none
+ *  nothing
  *
  * ret:
  *  nothing
  */
-let linkChoice = "";    // link chosen
-let linkMode   = false; // are we in link mode?
+let linkChoice = "";
+let linkMode = false;
 const enterLinkMode = () => {
   linkMode = true;
-  choice = "";
+  linkChoice = "";
 
   getLinks().forEach((link) => {
-    const key = genKey();
+    const key = uniqKey();
     const r = link.getBoundingClientRect();
     const label = document.createElement("div");
 
@@ -255,7 +100,7 @@ const enterLinkMode = () => {
  * exit link mode:
  *
  * args:
- *  none
+ *  nothing
  *
  * ret:
  *  nothing
@@ -263,7 +108,6 @@ const enterLinkMode = () => {
 const exitLinkMode = () => {
   linkMode = false;
   linkChoice = "";
-  keyNext = 0;
 
   for (const [k, v] of links)
     v.label.remove();
@@ -275,51 +119,33 @@ const exitLinkMode = () => {
  * link mode handler:
  *
  * args:
- *  none
+ *  @e: event
  *
  * ret:
- *  may change page
+ *  nothing
  */
-let cTimeout = null; // character timeout
+let linkTimeout = null;
 const linkModeHandler = (e) => {
   if (e.key === "Escape") {
     exitLinkMode();
+    stopEvent(e);
     return;
   }
 
-  clearTimeout(cTimeout);
+  clearTimeout(linkTimeout);
   linkChoice += e.key;
-  e.preventDefault();
-  e.stopPropagation();
-  cTimeout = setTimeout(() => {
+  stopEvent(e);
+  linkTimeout = setTimeout(() => {
     if (!links.has(linkChoice))
       return;
 
     links.get(linkChoice).link.click();
     exitLinkMode();
-  }, KEY_WAIT);
+  }, 600);
 };
 
-document.querySelectorAll("textarea").forEach((input) => {
-  input.addEventListener("focus", (e) => {
-    mode = IN_NORMAL;
-  });
-  input.addEventListener("blur", (e) => {
-    mode = NORMAL;
-  });
-});
-
-document.querySelectorAll("input").forEach((input) => {
-  input.addEventListener("focus", (e) => {
-    mode = IN_NORMAL;
-  });
-  input.addEventListener("blur", (e) => {
-    mode = NORMAL;
-  });
-});
-
 /**
- * handle keydown event:
+ * stop event:
  *
  * args:
  *  @e: event
@@ -327,77 +153,240 @@ document.querySelectorAll("input").forEach((input) => {
  * ret:
  *  nothing
  */
-let dPressed = false;
-let dTimeout = null;
-document.addEventListener("keydown", (e) => {
-  // hack
-  if (blackList.has(window.location.hostname))
-    return;
+const stopEvent = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+};
 
-  if (mode !== NORMAL) {
-    if (e.key === "Enter") {
-      mode = NORMAL;
+/**
+ * create handler for double char keybinding:
+ *
+ * args:
+ *  @c:  char
+ *  @fn: handler
+ *
+ * ret:
+ *  handler for c
+ */
+const doubleCharHandler = (c, fn) => {
+  let cPressed = false;
+  let cTimeout = null;
+
+  return (e) => {
+    if (e.key !== c)
       return;
-    }
-    if (mode === IN_NORMAL) {
-      if (e.key === "i") {
-        mode = IN_INSERT;
-      } else if (e.key === "h") {
-        const i = e.target.selectionStart;
 
-        e.target.setSelectionRange(
-          Math.max(0, i - 1),
-          Math.max(0, i - 1)
-        );
-      } else if (e.key === "l") {
-        const i = e.target.selectionStart;
-        const len = e.target.value.length;
-
-        e.target.setSelectionRange(
-          Math.min(len, i + 1),
-          Math.min(len, i + 1)
-        );
-      } else if (dPressed) {
-        e.target.value = "";
-        dPressed = false;
-        clearTimeout(dTimeout);
-      } else if (e.key === "d") {
-        dPressed = true;
-        dTimeout = setTimeout(() => {
-          dPressed = false;
-        }, GG_WAIT);
-      }
-      e.preventDefault();
-      e.stopPropagation();
+    if (cPressed) {
+      clearTimeout(cTimeout);
+      cPressed = false;
+      fn(e);
     } else {
-      if (e.key === "Escape") {
-        mode = IN_NORMAL;
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      cPressed = true;
+      cTimeout = setTimeout(() => {
+        cPressed = false;
+      }, 600);
     }
-    return;
-  }
+  };
+};
 
+// regular keybinding handlers
+const regularHandlers = new Map([
+  [MODE_NORMAL, new Map([
+    ["j", (e) => {
+      window.scrollBy(0, 50);
+      stopEvent(e);
+    }],
+    ["k", (e) => {
+      window.scrollBy(0, -50);
+      stopEvent(e);
+    }],
+    ["g", doubleCharHandler("g", (e) => {
+      window.scrollTo({
+        behavior: "smooth",
+        top: 0,
+      });
+      stopEvent(e);
+    })],
+    ["f", (e) => {
+      linkMode = true;
+      enterLinkMode();
+      stopEvent(e);
+    }],
+  ])],
+  [MODE_INPUT_NORMAL, new Map([
+    ["i", (e) => {
+      mode = MODE_INSERT;
+      stopEvent(e);
+    }],
+    ["h", (e) => {
+      const t = e.target;
+      const i = t.selectionStart;
+
+      t.setSelectionRange(
+        Math.max(0, i - 1),
+        Math.max(0, i - 1)
+      );
+      stopEvent(e);
+    }],
+    ["l", (e) => {
+      const t = e.target;
+      const i = t.selectionStart;
+      const len = t.value.length;
+
+      t.setSelectionRange(
+        Math.min(len, i + 1),
+        Math.min(len, i + 1)
+      );
+      stopEvent(e);
+    }],
+    ["d", doubleCharHandler("d", (e) => {
+      e.target.value = "";
+      stopEvent(e);
+    })],
+    ["Enter", (e) => {
+      mode = MODE_NORMAL;
+    }],
+  ])],
+  [MODE_INSERT, new Map([
+    ["Escape", (e) => {
+      mode = MODE_INPUT_NORMAL;
+      stopEvent(e);
+    }],
+    ["Enter", (e) => {
+      mode = MODE_NORMAL;
+    }],
+  ])],
+]);
+
+// ctrl+char keybinding handlers
+const ctrlHandlers = new Map([
+  [MODE_NORMAL, new Map([
+    ["d", (e) => {
+      window.scrollBy(0, 500);
+      stopEvent(e);
+    }],
+    ["u", (e) => {
+      window.scrollBy(0, -500);
+      stopEvent(e);
+    }],
+    ["o", (e) => {
+      window.history.back();
+      stopEvent(e);
+    }],
+  ])],
+  [MODE_INPUT_NORMAL, new Map([
+  ])],
+  [MODE_INSERT, new Map([
+  ])],
+]);
+
+// shift+char keybinding handlers
+const shiftHandlers = new Map([
+  [MODE_NORMAL, new Map([
+    ["G", (e) => {
+      window.scrollTo({
+        behavior: "smooth",
+        top: document.documentElement.scrollHeight,
+      });
+      stopEvent(e);
+    }],
+  ])],
+  [MODE_INPUT_NORMAL, new Map([
+  ])],
+  [MODE_INSERT, new Map([
+  ])],
+]);
+
+/**
+ * handle event:
+ *
+ * args:
+ *  @handlers: handler map
+ *  @e:        event
+ *
+ * ret:
+ *  @true:  if handled
+ *  @false: if not
+ */
+const eventHandler = (handlers, e) => {
+  const m = handlers.get(mode);
+
+  if (!m.has(e.key))
+    return false;
+
+  m.get(e.key)(e);
+  return true;
+};
+
+/**
+ * regular char keybinding handler:
+ *
+ * args:
+ *  @e: event
+ *
+ * ret:
+ *  @true:  if handled
+ *  @false: if not
+ */
+const regularHandler = (e) => {
+  return eventHandler(regularHandlers, e);
+};
+
+/**
+ * ctrl+char keybinding handler:
+ *
+ * args:
+ *  @e: event
+ *
+ * ret:
+ *  @true:  if handled
+ *  @false: if not
+ */
+const ctrlHandler = (e) => {
+  if (!e.ctrlKey)
+    return false;
+
+  return eventHandler(ctrlHandlers, e);
+};
+
+/**
+ * shift+char keybinding handler:
+ *
+ * args:
+ *  @e: event
+ *
+ * ret:
+ *  @true:  if handled
+ *  @false: if not
+ */
+const shiftHandler = (e) => {
+  if (!e.shiftKey)
+    return false;
+
+  return eventHandler(shiftHandlers, e);
+};
+
+// handle focus/blur for all <input>
+document.querySelectorAll("input").forEach((input) => {
+  input.addEventListener("focus", (e) => {
+    mode = MODE_INPUT_NORMAL;
+  });
+  input.addEventListener("blur", (e) => {
+    mode = MODE_NORMAL;
+  });
+});
+
+// handle keydown event
+document.addEventListener("keydown", (e) => {
   if (linkMode) {
     linkModeHandler(e);
     return;
   }
-  if (e.key === "f") {
-    if (e.ctrlKey)
-      return;
-    e.preventDefault();
-    e.stopPropagation();
-    enterLinkMode();
-    return;
-  }
 
-  if (trySingle(e))
+  if (regularHandler(e))
     return;
-  if (tryCtrl(e))
+  if (ctrlHandler(e))
     return;
-  if (tryShift(e))
+  if (shiftHandler(e))
     return;
-
-  tryGgScroll(e);
-}, CAPTURE);
+}, true);
