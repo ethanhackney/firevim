@@ -297,6 +297,11 @@ const shiftHandlers = new Map([
   ])],
 ]);
 
+// sites to disable extension on, this is a hack
+const blackList = new Set([
+  "chatgpt.com",
+]);
+
 /**
  * handle event:
  *
@@ -378,6 +383,9 @@ document.querySelectorAll("input").forEach((input) => {
 
 // handle keydown event
 document.addEventListener("keydown", (e) => {
+  if (blackList.has(location.hostname))
+    return;
+
   if (linkMode) {
     linkModeHandler(e);
     return;
