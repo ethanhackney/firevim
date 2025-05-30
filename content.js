@@ -301,9 +301,10 @@ const shiftHandlers = new Map([
   ])],
 ]);
 
-// sites to disable extension on, this is a hack
+// sites to disable extension on for now
 const blackList = new Set([
   "chatgpt.com",
+  "github.com",
 ]);
 
 /**
