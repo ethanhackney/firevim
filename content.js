@@ -190,6 +190,8 @@ const doubleCharHandler = (c, fn) => {
         cPressed = false;
       }, 600);
     }
+
+    stopEvent(e);
   };
 };
 
@@ -209,7 +211,6 @@ const regularHandlers = new Map([
         behavior: "smooth",
         top: 0,
       });
-      stopEvent(e);
     })],
     ["f", (e) => {
       linkMode = true;
@@ -245,7 +246,6 @@ const regularHandlers = new Map([
     }],
     ["d", doubleCharHandler("d", (e) => {
       e.target.value = "";
-      stopEvent(e);
     })],
     ["Enter", (e) => {
       mode = MODE_NORMAL;
@@ -339,7 +339,11 @@ const eventHandler = (handlers, e) => {
  *  @false: if not
  */
 const regularHandler = (e) => {
-  return eventHandler(regularHandlers, e);
+  if (eventHandler(regularHandlers, e))
+    return true;
+
+  if (mode === MODE_INPUT_NORMAL)
+    stopEvent(e);
 };
 
 /**
