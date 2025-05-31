@@ -1,1 +1,5 @@
-fold linkMode into regular mode handling
+performance (do not do unless needed)
+=====================================
+use O(log_k(n)) algorithm for generating unique key
+save results of enterLinkMode if not leaving page
+add array of links to make display loops faster
