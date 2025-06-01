@@ -208,7 +208,7 @@ const regularHandlers = new Map([
     }],
     ["g", doubleCharHandler("g", (e) => {
       window.scrollTo({
-        behavior: "smooth",
+        behavior: "instant",
         top: 0,
       });
     })],
@@ -289,7 +289,7 @@ const shiftHandlers = new Map([
   [MODE_NORMAL, new Map([
     ["G", (e) => {
       window.scrollTo({
-        behavior: "smooth",
+        behavior: "instant",
         top: document.documentElement.scrollHeight,
       });
       stopEvent(e);
