@@ -8,6 +8,14 @@ const MODE_NORMAL       = 2; // normal mode
 // current mode
 let mode = MODE_NORMAL;
 
+let cmdMode = false; // are we in command mode?
+let cmd = "";        // command
+
+// command line
+const cmdLine = document.createElement("input");
+cmdLine.style.display = "none";
+document.body.appendChild(cmdLine);
+
 /**
  * get all <a> on page:
  *
@@ -294,6 +302,12 @@ const shiftHandlers = new Map([
       });
       stopEvent(e);
     }],
+    [":", (e) => {
+      cmdMode = true;
+      cmd = "";
+      cmdLine.style.display = "block";
+      stopEvent(e);
+    }],
   ])],
   [MODE_INPUT_NORMAL, new Map([
   ])],
@@ -380,6 +394,29 @@ const shiftHandler = (e) => {
   return eventHandler(shiftHandlers, e);
 };
 
+/**
+ * command mode handler:
+ *
+ * args:
+ *  @e: event
+ *
+ * ret:
+ *  none
+ */
+const cmdModeHandler = (e) => {
+  if (e.key === "Backspace") {
+    cmd = cmd.slice(0, -1);
+    stopEvent(e);
+  } else if (e.key !== "Enter") {
+    cmd += e.key;
+  } else {
+    cmdMode = false;
+    cmd = "";
+    cmdLine.style.display = "none";
+    stopEvent(e);
+  }
+};
+
 // handle focus/blur for all <input>
 for (const input of document.getElementsByTagName("input")) {
   input.addEventListener("focus", (e) => {
@@ -394,6 +431,11 @@ for (const input of document.getElementsByTagName("input")) {
 document.addEventListener("keydown", (e) => {
   if (blackList.has(location.hostname))
     return;
+
+  if (cmdMode) {
+    cmdModeHandler(e);
+    return;
+  }
 
   if (linkMode) {
     linkModeHandler(e);
