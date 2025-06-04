@@ -10,6 +10,7 @@ let mode = MODE_NORMAL;
 
 let cmdMode = false; // are we in command mode?
 let cmd = "";        // command
+let firstspace = -1; // first space in command line
 
 // command line
 const cmdLine = document.createElement("input");
@@ -403,18 +404,45 @@ const shiftHandler = (e) => {
  * ret:
  *  none
  */
+const keyIgnore = new Set([
+  "CapsLock",
+  "Shift",
+  "Ctrl",
+]);
 const cmdModeHandler = (e) => {
   if (e.key === "Backspace") {
     cmd = cmd.slice(0, -1);
-    stopEvent(e);
-  } else if (e.key !== "Enter") {
-    cmd += e.key;
-  } else {
-    cmdMode = false;
-    cmd = "";
-    cmdLine.style.display = "none";
-    stopEvent(e);
+    return;
   }
+
+  if (e.key !== "Enter") {
+    if (keyIgnore.has(e.key))
+      return;
+
+    cmd += e.key;
+    if (e.key === " " && firstspace < 0)
+      firstspace = cmd.length - 1;
+
+    return;
+  }
+
+  op = cmd.substr(0, firstspace);
+  arg = cmd.substr(firstspace + 1);
+
+  if (op === "search") {
+    const re = new RegExp(arg);
+    const elem = document.getElementsByTagName("*");
+
+    for (let i = 0; i < elem.length; i++) {
+      if (elem[i].textContent.match(re))
+        console.log(elem[i].textContent);
+    }
+  }
+
+  cmdMode = false;
+  cmd = "";
+  cmdLine.style.display = "none";
+  stopEvent(e);
 };
 
 // handle focus/blur for all <input>
