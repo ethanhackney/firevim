@@ -8,6 +8,12 @@ const MODE_NORMAL       = 2; // normal mode
 // current mode
 let mode = MODE_NORMAL;
 
+// saved position on page
+const savedPos = {
+  x: 0,
+  y: 0,
+};
+
 let cmdMode = false; // are we in command mode?
 let cmd = "";        // command
 let firstspace = -1; // first space in command line
@@ -204,18 +210,35 @@ const doubleCharHandler = (c, fn) => {
   };
 };
 
+/**
+ * save current page position:
+ *
+ * args:
+ *  none
+ *
+ * ret:
+ *  none
+ */
+const savePos = () => {
+  savedPos.x = window.scrollX;
+  savedPos.y = window.scrollY;
+};
+
 // regular keybinding handlers
 const regularHandlers = new Map([
   [MODE_NORMAL, new Map([
     ["j", (e) => {
+      savePos();
       window.scrollBy(0, 50);
       stopEvent(e);
     }],
     ["k", (e) => {
+      savePos();
       window.scrollBy(0, -50);
       stopEvent(e);
     }],
     ["g", doubleCharHandler("g", (e) => {
+      savePos();
       window.scrollTo({
         behavior: "instant",
         top: 0,
@@ -226,6 +249,9 @@ const regularHandlers = new Map([
       enterLinkMode();
       stopEvent(e);
     }],
+    [",", doubleCharHandler(",", (e) => {
+      window.scrollTo(savedPos.x, savedPos.y);
+    })],
   ])],
   [MODE_INPUT_NORMAL, new Map([
     ["i", (e) => {
@@ -275,10 +301,12 @@ const regularHandlers = new Map([
 const ctrlHandlers = new Map([
   [MODE_NORMAL, new Map([
     ["d", (e) => {
+      savePos();
       window.scrollBy(0, 500);
       stopEvent(e);
     }],
     ["u", (e) => {
+      savePos();
       window.scrollBy(0, -500);
       stopEvent(e);
     }],
@@ -297,6 +325,7 @@ const ctrlHandlers = new Map([
 const shiftHandlers = new Map([
   [MODE_NORMAL, new Map([
     ["G", (e) => {
+      savePos();
       window.scrollTo({
         behavior: "instant",
         top: document.documentElement.scrollHeight,
